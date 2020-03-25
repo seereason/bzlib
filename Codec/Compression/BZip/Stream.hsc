@@ -69,10 +69,13 @@ import Foreign.C
 import Data.ByteString.Internal (nullForeignPtr)
 import System.IO.Unsafe (unsafeInterleaveIO)
 import System.IO (hPutStrLn, stderr)
+#if !MIN_VERSION_base(4,13,0)
 import Control.Applicative (Applicative(..))
+#endif
 import Control.Monad (liftM, ap)
 import Control.Exception (assert)
 
+import qualified Control.Monad.Fail as Fail
 import Prelude hiding (length)
 
 #include "bzlib.h"
@@ -233,6 +236,11 @@ instance Monad Stream where
 --  m >>= f = (m `thenZ` \a -> consistencyCheck `thenZ_` returnZ a) `thenZ` f
   (>>)   = thenZ_
   return = returnZ
+#if !MIN_VERSION_base(4,13,0)
+  fail = Fail.fail
+#endif
+
+instance Fail.MonadFail Stream where
   fail   = (finalise >>) . failZ
 
 returnZ :: a -> Stream a
